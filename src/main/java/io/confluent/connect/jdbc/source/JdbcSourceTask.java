@@ -81,6 +81,8 @@ public class JdbcSourceTask extends SourceTask {
 
     List<String> tables = config.getList(JdbcSourceTaskConfig.TABLES_CONFIG);
     String query = config.getString(JdbcSourceTaskConfig.QUERY_CONFIG);
+
+    String whereClause = config.getString(JdbcSourceTaskConfig.TABLE_WHERE_CLAUSE_CONFIG);
     if ((tables.isEmpty() && query.isEmpty()) || (!tables.isEmpty() && !query.isEmpty())) {
       throw new ConnectException("Invalid configuration: each JdbcSourceTask must have at "
                                         + "least one table assigned to it or one query specified");
@@ -145,21 +147,23 @@ public class JdbcSourceTask extends SourceTask {
       String topicPrefix = config.getString(JdbcSourceTaskConfig.TOPIC_PREFIX_CONFIG);
       boolean mapNumerics = config.getBoolean(JdbcSourceTaskConfig.NUMERIC_PRECISION_MAPPING_CONFIG);
 
+      long batchMaxRows = config.getLong(JdbcSourceTaskConfig.BATCH_MAX_ROWS_CONFIG);
+
       if (mode.equals(JdbcSourceTaskConfig.MODE_BULK)) {
         tableQueue.add(new BulkTableQuerier(queryMode, tableOrQuery, schemaPattern,
                 topicPrefix, mapNumerics));
       } else if (mode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING)) {
         tableQueue.add(new TimestampIncrementingTableQuerier(
-            queryMode, tableOrQuery, topicPrefix, null, incrementingColumn, offset,
+            queryMode, tableOrQuery, topicPrefix, null, incrementingColumn, whereClause, offset, batchMaxRows,
                 timestampDelayInterval, schemaPattern, mapNumerics));
       } else if (mode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP)) {
         tableQueue.add(new TimestampIncrementingTableQuerier(
-            queryMode, tableOrQuery, topicPrefix, timestampColumn, null, offset,
+            queryMode, tableOrQuery, topicPrefix, timestampColumn, null, whereClause, offset, batchMaxRows,
                 timestampDelayInterval, schemaPattern, mapNumerics));
       } else if (mode.endsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING)) {
         tableQueue.add(new TimestampIncrementingTableQuerier(
-            queryMode, tableOrQuery, topicPrefix, timestampColumn, incrementingColumn,
-                offset, timestampDelayInterval, schemaPattern, mapNumerics));
+            queryMode, tableOrQuery, topicPrefix, timestampColumn, incrementingColumn, whereClause,
+                offset, batchMaxRows, timestampDelayInterval, schemaPattern, mapNumerics));
       }
     }
 
@@ -199,7 +203,7 @@ public class JdbcSourceTask extends SourceTask {
         log.debug("Checking for next block of results from {}", querier.toString());
         querier.maybeStartQuery(cachedConnectionProvider.getValidConnection());
 
-        int batchMaxRows = config.getInt(JdbcSourceTaskConfig.BATCH_MAX_ROWS_CONFIG);
+        long batchMaxRows = config.getLong(JdbcSourceTaskConfig.BATCH_MAX_ROWS_CONFIG);
         boolean hadNext = true;
         while (results.size() < batchMaxRows && (hadNext = querier.next())) {
           results.add(querier.extractRecord());
@@ -215,7 +219,7 @@ public class JdbcSourceTask extends SourceTask {
           continue;
         }
 
-        log.debug("Returning {} records for {}", results.size(), querier.toString());
+        log.info("Returning {} records for {}", results.size(), querier.name);
         return results;
       } catch (SQLException e) {
         log.error("Failed to run query for table {}: {}", querier.toString(), e);

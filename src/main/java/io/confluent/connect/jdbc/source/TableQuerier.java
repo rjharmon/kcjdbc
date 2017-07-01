@@ -37,7 +37,7 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
 
   protected final QueryMode mode;
   protected final String schemaPattern;
-  protected final String name;
+  final String name;
   protected final String query;
   protected final String topicPrefix;
 
@@ -75,7 +75,9 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
   protected abstract void createPreparedStatement(Connection db) throws SQLException;
 
   public boolean querying() {
+
     return resultSet != null;
+
   }
 
   public void maybeStartQuery(Connection db) throws SQLException {

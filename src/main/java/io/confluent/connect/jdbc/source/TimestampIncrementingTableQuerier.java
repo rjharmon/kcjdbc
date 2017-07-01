@@ -59,16 +59,20 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
 
   private String timestampColumn;
   private String incrementingColumn;
+  private String whereClause;
   private long timestampDelay;
   private TimestampIncrementingOffset offset;
+  private Long batchMaxRows;
 
   public TimestampIncrementingTableQuerier(QueryMode mode, String name, String topicPrefix,
-                                           String timestampColumn, String incrementingColumn,
-                                           Map<String, Object> offsetMap, Long timestampDelay,
+                                           String timestampColumn, String incrementingColumn, String whereClause,
+                                           Map<String, Object> offsetMap, Long batchMaxRows, Long timestampDelay,
                                            String schemaPattern, boolean mapNumerics) {
     super(mode, name, topicPrefix, schemaPattern, mapNumerics);
     this.timestampColumn = timestampColumn;
     this.incrementingColumn = incrementingColumn;
+    this.whereClause = whereClause;
+    this.batchMaxRows = batchMaxRows;
     this.timestampDelay = timestampDelay;
     this.offset = TimestampIncrementingOffset.fromMap(offsetMap);
   }
@@ -110,7 +114,14 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       //  timestamp 1235, id 22
       //  timestamp 1236, id 23
       // We should capture both id = 22 (an update) and id = 23 (a new row)
-      builder.append(" WHERE ");
+      builder.append(" WHERE (");
+      if (whereClause == null) {
+        System.out.println("null whereClause");
+      } else {
+        if (whereClause.length() > 0) {
+          builder.append(whereClause+ ") AND (");
+        }
+      }
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" < ? AND ((");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
@@ -120,26 +131,41 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       builder.append(") OR ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" > ?)");
+      builder.append(")");
       builder.append(" ORDER BY ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(",");
       builder.append(JdbcUtils.quoteString(incrementingColumn, quoteString));
       builder.append(" ASC");
     } else if (incrementingColumn != null) {
-      builder.append(" WHERE ");
+      // WHERE (whereClause) AND (...) ORDER BY ...
+      builder.append(" WHERE (");
+      if (whereClause.length() > 0) {
+        builder.append(whereClause+ ") AND (");
+      }
       builder.append(JdbcUtils.quoteString(incrementingColumn, quoteString));
       builder.append(" > ?");
+      builder.append(")");
       builder.append(" ORDER BY ");
       builder.append(JdbcUtils.quoteString(incrementingColumn, quoteString));
       builder.append(" ASC");
     } else if (timestampColumn != null) {
-      builder.append(" WHERE ");
+      builder.append(" WHERE (");
+      if (whereClause.length() > 0) {
+        builder.append(whereClause+ ") AND (");
+      }
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" > ? AND ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
-      builder.append(" < ? ORDER BY ");
+      builder.append(" < ?" );
+      builder.append(")");
+      builder.append(" ORDER BY ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" ASC");
+    }
+    if (batchMaxRows > 0) {
+      builder.append(" LIMIT ");
+      builder.append(batchMaxRows.toString());
     }
     String queryString = builder.toString();
     log.debug("{} prepared SQL query: {}", this, queryString);

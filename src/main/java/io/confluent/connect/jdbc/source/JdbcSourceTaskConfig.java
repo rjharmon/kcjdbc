@@ -31,8 +31,16 @@ public class JdbcSourceTaskConfig extends JdbcSourceConnectorConfig {
   public static final String TABLES_CONFIG = "tables";
   private static final String TABLES_DOC = "List of tables for this task to watch for changes.";
 
+  public static final String TABLE_WHERE_CLAUSE_CONFIG = "table.where.clause";
+  private static final String TABLE_WHERE_CLAUSE_DOC =
+    "WHERE clause expression to filter rows.  Ignored by 'query' option. "
+      + "Will be AND'd with additional conditions for timestamp/incremental modes";
+  public static final String TABLE_WHERE_CLAUSE_DEFAULT = "";
+  private static final String TABLE_WHERE_CLAUSE_DISPLAY = "Table where clause";
+
   static ConfigDef config = baseConfigDef()
-      .define(TABLES_CONFIG, Type.LIST, Importance.HIGH, TABLES_DOC);
+      .define(TABLES_CONFIG, Type.LIST, Importance.HIGH, TABLES_DOC)
+      .define(TABLE_WHERE_CLAUSE_CONFIG, Type.STRING, Importance.HIGH, TABLE_WHERE_CLAUSE_DOC);
 
   public JdbcSourceTaskConfig(Map<String, String> props) {
     super(config, props);

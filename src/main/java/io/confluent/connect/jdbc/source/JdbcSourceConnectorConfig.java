@@ -113,9 +113,10 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
 
   public static final String TABLE_WHITELIST_CONFIG = "table.whitelist";
   private static final String TABLE_WHITELIST_DOC =
-      "List of tables to include in copying. If specified, table.blacklist may not be set.";
+    "List of tables to include in copying. If specified, table.blacklist may not be set.";
   public static final String TABLE_WHITELIST_DEFAULT = "";
   private static final String TABLE_WHITELIST_DISPLAY = "Table Whitelist";
+
 
   public static final String TABLE_BLACKLIST_CONFIG = "table.blacklist";
   private static final String TABLE_BLACKLIST_DOC =
@@ -213,7 +214,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
                 MODE_DEPENDENTS_RECOMMENDER)
         .define(QUERY_CONFIG, Type.STRING, QUERY_DEFAULT, Importance.MEDIUM, QUERY_DOC, MODE_GROUP, 5, Width.SHORT, QUERY_DISPLAY)
         .define(POLL_INTERVAL_MS_CONFIG, Type.INT, POLL_INTERVAL_MS_DEFAULT, Importance.HIGH, POLL_INTERVAL_MS_DOC, CONNECTOR_GROUP, 1, Width.SHORT, POLL_INTERVAL_MS_DISPLAY)
-        .define(BATCH_MAX_ROWS_CONFIG, Type.INT, BATCH_MAX_ROWS_DEFAULT, Importance.LOW, BATCH_MAX_ROWS_DOC, CONNECTOR_GROUP, 2, Width.SHORT, BATCH_MAX_ROWS_DISPLAY)
+        .define(BATCH_MAX_ROWS_CONFIG, Type.LONG, BATCH_MAX_ROWS_DEFAULT, Importance.LOW, BATCH_MAX_ROWS_DOC, CONNECTOR_GROUP, 2, Width.SHORT, BATCH_MAX_ROWS_DISPLAY)
         .define(TABLE_POLL_INTERVAL_MS_CONFIG, Type.LONG, TABLE_POLL_INTERVAL_MS_DEFAULT, Importance.LOW, TABLE_POLL_INTERVAL_MS_DOC, CONNECTOR_GROUP, 3, Width.SHORT, TABLE_POLL_INTERVAL_MS_DISPLAY)
         .define(TOPIC_PREFIX_CONFIG, Type.STRING, Importance.HIGH, TOPIC_PREFIX_DOC, CONNECTOR_GROUP, 4, Width.MEDIUM, TOPIC_PREFIX_DISPLAY)
         .define(TIMESTAMP_DELAY_INTERVAL_MS_CONFIG, Type.LONG, TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT, Importance.HIGH, TIMESTAMP_DELAY_INTERVAL_MS_DOC, CONNECTOR_GROUP, 5, Width.MEDIUM, TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY);
